@@ -14,7 +14,7 @@ const activeUsers : ActiveUsers = {
 	status : 0,
 	city : null,
 	days: null,
-	data: {}
+	data: null
 
 }
 const logger = MAIN_LOGGER.child({ })
@@ -72,7 +72,7 @@ const startSock = async() => {
 	}
 
 	
-
+	// weather bot
 	sock.ev.on('messages.upsert', async m => {
 		console.log(JSON.stringify(m, undefined, 2))
 
@@ -80,66 +80,63 @@ const startSock = async() => {
         
 		if(!msg.key.fromMe && m.type === 'notify' && doReplies) {
             
+			if (!(msg.key.remoteJid in activeUsers)) {
+				activeUsers[msg.key.remoteJid] = {
+					status: 0,
+					city: null,
+					days: null,
+					data: null
+				};
+				await sendMessageWTyping( 
+					{text: 'Hi! Welcome to WeatherBot. Enter your city\'s name for weather information.'}, msg.key.remoteJid)
+			} else {
+					
+					if (activeUsers[msg.key.remoteJid].status === 0) {
+						
+						activeUsers[msg.key.remoteJid].city = m.messages[0].message.conversation.trim();
+						const weatherData = await weatherAPI.getWeatherFromCityName(activeUsers[msg.key.remoteJid].city);    
 
-        
-			if (m.messages[0].key.remoteJid == '917506348653@s.whatsapp.net') {
-                if (!(msg.key.remoteJid in activeUsers)) {
-                    activeUsers[msg.key.remoteJid] = {
-                        status: 0,
-                        city: null,
-                        days: null,
-                        data: null
-                    };
-                    await sendMessageWTyping( 
-                        {text: 'Hi! Welcome to WeatherBot. Enter your city\'s name for weather information.'}, msg.key.remoteJid)
-                } else {
-                        
-                        if (activeUsers[msg.key.remoteJid].status === 0) {
-                            
-                            activeUsers[msg.key.remoteJid].city = m.messages[0].message.conversation
-                            const weatherData = await weatherAPI.getWeatherFromCityName(activeUsers[msg.key.remoteJid].city);    
+						if (weatherData) {
+							await sendMessageWTyping( 
+								{text: 'Perfect! How many days do you want the information for starting today? (max. 7)'}, msg.key.remoteJid)
+							activeUsers[msg.key.remoteJid].status = 1;
+							activeUsers[msg.key.remoteJid].data = weatherData;
+							
+							
+						} else {
+							await sendMessageWTyping({ text: 'Invalid entry. Try again.'}, msg.key.remoteJid) 
+							activeUsers[msg.key.remoteJid].status = 0;
+						}
+					} else {
 
-                            if (weatherData) {
-                                await sendMessageWTyping( 
-                                    {text: 'Perfect! How many days do you want the information for starting today? (max. 7)'}, msg.key.remoteJid)
-                                activeUsers[msg.key.remoteJid].status = 1;
-                                activeUsers[msg.key.remoteJid].data = weatherData;
-                                
-                                
-                            } else {
-                                await sendMessageWTyping({ text: 'Invalid entry. Try again.'}, msg.key.remoteJid) 
-                                activeUsers[msg.key.remoteJid].status = 0;
-                            }
-                        } else {
+					
+						const inp = parseInt(m.messages[0].message.conversation.trim());
+						if (inp) {
+							const days = Math.min(inp, 7);
+							const data = activeUsers[msg.key.remoteJid].data;
+							let s1 = `Today's weather in ${activeUsers[msg.key.remoteJid].data.cityName}: \nTemperature: ${String(data.current_weather.temperature)} °C \n\n` 
+							
+							for (let i = 0; i < days; i++) {
+								const s2 = `${new Date(data.daily.time[i]).toLocaleDateString('en-us', { weekday:"long", year:"numeric", month:"short", day:"numeric"})} \nMinimum temperature: ${data.daily.temperature_2m_min[i]} °C \nMaximum temperature: ${data.daily.temperature_2m_max[i]} °C \nPrecipitation: ${data.daily.precipitation_sum[i]} mm\n\n` ;
+								s1 = s1 + s2;
+							}
+							await sendMessageWTyping({ text: s1}, msg.key.remoteJid)
+							delete activeUsers[msg.key.remoteJid] ;
 
-                        
-                            const inp = parseInt(m.messages[0].message.conversation);
-                            if (inp) {
-                                const days = Math.min(inp, 7);
-                                const data = activeUsers[msg.key.remoteJid].data;
-                                let s1 = `Today's weather in ${activeUsers[msg.key.remoteJid].data.cityName}: \nTemperature: ${String(data.current_weather.temperature)} °C \n\n` 
-                                
-                                for (let i = 0; i < days; i++) {
-                                    const s2 = `${new Date(data.daily.time[i]).toLocaleDateString('en-us', { weekday:"long", year:"numeric", month:"short", day:"numeric"})} \nMinimum temperature: ${data.daily.temperature_2m_min[i]} °C \nMaximum temperature: ${data.daily.temperature_2m_max[i]} °C \nPrecipitation: ${data.daily.precipitation_sum[i]} mm\n\n` ;
-                                    s1 = s1 + s2;
-                                }
-                                await sendMessageWTyping({ text: s1}, msg.key.remoteJid)
-                                delete activeUsers[msg.key.remoteJid] ;
-
-                            } else {
-                                await sendMessageWTyping({ text: 'Invalid entry. Try again.'}, msg.key.remoteJid) 
-                                activeUsers[msg.key.remoteJid].status = 1;
-                            }
-                                   
-                            }
-                        }
+						} else {
+							await sendMessageWTyping({ text: 'Invalid entry. Try again.'}, msg.key.remoteJid) 
+							activeUsers[msg.key.remoteJid].status = 1;
+						}
+								
+						}
+					}
                 
                 
 			}
 			await sock!.sendReadReceipt(msg.key.remoteJid, msg.key.participant, [msg.key.id])
 			
 			
-		}
+		
 
 	})
 
