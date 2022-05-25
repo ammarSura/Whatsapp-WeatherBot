@@ -1,6 +1,7 @@
 import { Boom } from '@hapi/boom'
 import makeWASocket, { AnyMessageContent, delay, DisconnectReason, fetchLatestBaileysVersion, makeInMemoryStore, MessageRetryMap, useMultiFileAuthState } from '../src'
 import MAIN_LOGGER from '../src/Utils/logger'
+// Importing functions to access api
 const weatherAPI = require('./weather.ts')
 
 export interface ActiveUsers {
