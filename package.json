@@ -22,7 +22,7 @@
     "build:all": "tsc && typedoc",
     "build:docs": "typedoc",
     "build:tsc": "tsc",
-    "bot": "node --inspect -r ts-node/register Example/bot.ts",
+    "bot": "node --inspect -r ts-node/register Bot/bot.ts",
     "example:legacy": "node --inspect -r ts-node/register Example/example-legacy.ts",
     "gen-protobuf": "sh WAProto/GenerateStatics.sh",
     "browser-decode": "yarn ts-node src/BrowserMessageDecoding.ts",

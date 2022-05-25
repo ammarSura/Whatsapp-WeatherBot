@@ -2,7 +2,7 @@ const axios = require('axios');
 
 
 
-const getCoordinates = async (query) => {
+const getCoordinates = async (query : string) => {
     const result = await axios.get('https://geocoding-api.open-meteo.com/v1/search?', {
             params: {
                 name: query,
@@ -14,7 +14,7 @@ const getCoordinates = async (query) => {
 
     };
 
-const getWeather = async (latitude, longitude, current_weather, timezone) => {
+const getWeather = async (latitude : string, longitude : string, current_weather : boolean, timezone : string) => {
 
     const weatherData = await axios.get('https://api.open-meteo.com/v1/forecast?', {
         params: {
@@ -30,7 +30,7 @@ const getWeather = async (latitude, longitude, current_weather, timezone) => {
 
 }
 
-const getWeatherFromCityName = async (query) => {
+const getWeatherFromCityName = async (query : string) => {
     
     const coordResults = (await getCoordinates(query)).data.results;
     

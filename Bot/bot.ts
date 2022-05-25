@@ -3,7 +3,20 @@ import makeWASocket, { AnyMessageContent, delay, DisconnectReason, fetchLatestBa
 import MAIN_LOGGER from '../src/Utils/logger'
 const weatherAPI = require('./weather.ts')
 
-const activeUsers = {}
+export interface ActiveUsers {
+	status : Number,
+	city: string,
+    days?: number,
+    data: object,
+};
+
+const activeUsers : ActiveUsers = {
+	status : 0,
+	city : null,
+	days: null,
+	data: {}
+
+}
 const logger = MAIN_LOGGER.child({ })
 logger.level = 'trace'
 
@@ -67,13 +80,10 @@ const startSock = async() => {
         
 		if(!msg.key.fromMe && m.type === 'notify' && doReplies) {
             
-			console.log('replying to', m.messages[0].key.remoteJid, 'fdc');
-			console.log(m.messages[0].message.conversation, typeof(m.messages[0].key.remoteJid));
 
         
 			if (m.messages[0].key.remoteJid == '917506348653@s.whatsapp.net') {
                 if (!(msg.key.remoteJid in activeUsers)) {
-                    console.log('arede')
                     activeUsers[msg.key.remoteJid] = {
                         status: 0,
                         city: null,
@@ -83,14 +93,10 @@ const startSock = async() => {
                     await sendMessageWTyping( 
                         {text: 'Hi! Welcome to WeatherBot. Enter your city\'s name for weather information.'}, msg.key.remoteJid)
                 } else {
-                    console.log('poxq')
                         
                         if (activeUsers[msg.key.remoteJid].status === 0) {
-                            console.log('hyn')
                             
                             activeUsers[msg.key.remoteJid].city = m.messages[0].message.conversation
-                            console.dir(activeUsers)
-                            console.log('-------x')
                             const weatherData = await weatherAPI.getWeatherFromCityName(activeUsers[msg.key.remoteJid].city);    
 
                             if (weatherData) {
@@ -98,7 +104,6 @@ const startSock = async() => {
                                     {text: 'Perfect! How many days do you want the information for starting today? (max. 7)'}, msg.key.remoteJid)
                                 activeUsers[msg.key.remoteJid].status = 1;
                                 activeUsers[msg.key.remoteJid].data = weatherData;
-                                console.log('qwe', activeUsers[msg.key.remoteJid].data)
                                 
                                 
                             } else {
@@ -108,12 +113,10 @@ const startSock = async() => {
                         } else {
 
                         
-                            console.log('hynds', activeUsers[msg.key.remoteJid].status)
                             const inp = parseInt(m.messages[0].message.conversation);
                             if (inp) {
                                 const days = Math.min(inp, 7);
                                 const data = activeUsers[msg.key.remoteJid].data;
-                                console.log(data);
                                 let s1 = `Today's weather in ${activeUsers[msg.key.remoteJid].data.cityName}: \nTemperature: ${String(data.current_weather.temperature)} °C \n\n` 
                                 
                                 for (let i = 0; i < days; i++) {
